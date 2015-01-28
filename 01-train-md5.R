@@ -11,6 +11,7 @@ sink(filename, split=TRUE)
 
 library(tools)     # md5sum
 library(dplyr)     # filter
+library(EBImage)   # readImage
 
 time.1 <- Sys.time()
 cat(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
@@ -22,6 +23,8 @@ BASE.DIR <- "train/"
 train.dir   <- read.csv("00-Plankton-Train-Directories.csv", as.is=TRUE)
 train.file  <- read.csv("00-Plankton-Train-FileList.csv", as.is=TRUE)
 
+train.file$nrow <- 0
+train.file$ncol <- 0
 train.file$md5 <- ""
 
 for (i in 1:nrow(train.file))
@@ -35,6 +38,10 @@ for (i in 1:nrow(train.file))
     flush.console()
   }
 
+  img <- readImage(filename)
+  train.file$nrow[i] <- nrow(img)
+  train.file$ncol[i] <- ncol(img)
+
   train.file$md5[i] <- md5sum(filename)
 }
 
@@ -43,6 +50,11 @@ write.csv(train.file, "01-Plankton-Train-FileList-MD5.csv", row.names=FALSE)
 nrow(train.file)
 length(unique(train.file$filename))
 length(unique(train.file$md5))
+
+### Simple stats
+fivenum(train.file$nrow)
+fivenum(train.file$ncol)
+fivenum(train.file$filesize)
 
 ### Duplicates
 

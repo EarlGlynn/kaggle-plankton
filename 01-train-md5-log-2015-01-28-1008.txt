@@ -1,0 +1,44 @@
+2015-01-28 10:08:33 
+1 train/acantharia_protist/100224.jpg 
+1001 train/amphipods/29021.jpg 
+2001 train/appendicularian_slight_curve/29318.jpg 
+3001 train/artifacts_edge/44023.jpg 
+4001 train/chaetognath_other/108331.jpg 
+5001 train/chaetognath_other/37105.jpg 
+6001 train/chaetognath_sagitta/137256.jpg 
+7001 train/copepod_calanoid/38351.jpg 
+8001 train/copepod_calanoid_large/58704.jpg 
+9001 train/copepod_cyclopoid_oithona/63549.jpg 
+10001 train/copepod_cyclopoid_oithona_eggs/46578.jpg 
+11001 train/detritus_blob/118125.jpg 
+12001 train/detritus_other/148840.jpg 
+13001 train/diatom_chain_string/63284.jpg 
+14001 train/echinoderm_larva_seastar_bipinnaria/122571.jpg 
+15001 train/euphausiids/101321.jpg 
+16001 train/fish_larvae_very_thin_body/72379.jpg 
+17001 train/hydromedusae_other/130360.jpg 
+18001 train/hydromedusae_shapeB/73340.jpg 
+19001 train/hydromedusae_typeD_bell_and_tentacles/149106.jpg 
+20001 train/protist_noctiluca/124625.jpg 
+21001 train/protist_other/17602.jpg 
+22001 train/radiolarian_chain/101070.jpg 
+23001 train/siphonophore_calycophoran_abylidae/45374.jpg 
+24001 train/siphonophore_calycophoran_sphaeronectes_young/13972.jpg 
+25001 train/trichodesmium_bowtie/66702.jpg 
+26001 train/trichodesmium_puff/159483.jpg 
+27001 train/trichodesmium_puff/85278.jpg 
+28001 train/tunicate_doliolid/129797.jpg 
+29001 train/tunicate_partial/49994.jpg 
+30001 train/unknown_unclassified/131164.jpg 
+[1] 30336
+[1] 30336
+[1] 30335
+[1]  31  44  56  83 424
+[1]  21  43  53  72 428
+[1]   467.0  1048.5  1539.0  2479.0 79622.0
+  filename species filesize nrow ncol                              md5
+1    14864      11     3042  122   91 a51b1ffefa52fbe7b62aac22aa55b568
+2      271      12     3042  122   91 a51b1ffefa52fbe7b62aac22aa55b568
+2015-01-28 10:09:45 
+Time difference of 1.205006 mins
+ 72.3  secs

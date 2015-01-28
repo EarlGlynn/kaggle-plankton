@@ -11,6 +11,7 @@ sink(filename, split=TRUE)
 
 library(tools)     # md5sum
 library(dplyr)     # filter
+library(EBImage)   # readImage
 
 time.1 <- Sys.time()
 cat(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
@@ -21,6 +22,8 @@ BASE.DIR <- "test/"
 
 test.file  <- read.csv("03-Plankton-Test-FileList.csv", as.is=TRUE)
 
+test.file$nrow <- 0
+test.file$ncol <- 0
 test.file$md5 <- ""
 
 for (i in 1:nrow(test.file))
@@ -31,6 +34,10 @@ for (i in 1:nrow(test.file))
     cat(i, filename, "\n")
     flush.console()
   }
+
+  img <- readImage(filename)
+  test.file$nrow[i] <- nrow(img)
+  test.file$ncol[i] <- ncol(img)
 
   test.file$md5[i] <- md5sum(filename)
 }
@@ -50,7 +57,7 @@ duplicate.counts <- counts[counts > 1]
 duplicates <- test.file                                %>%
               filter(md5 %in% names(duplicate.counts)) %>%
               arrange(md5, filename)
-write.csv(test.file, "04-Plankton-Test-FileList-Duplicates.csv", row.names=FALSE)
+write.csv(duplicates, "04-Plankton-Test-FileList-Duplicates.csv", row.names=FALSE)
 
 big.dups <- counts[counts > 6]
 check.list <- test.file %>% filter(md5 %in% names(big.dups)) %>% arrange(md5)
@@ -66,8 +73,8 @@ unique.train <- sort(unique(train.file$md5))
 length(unique.train)
 
 in.both <- intersect(unique.train, unique.test)
-train.file %>% filter(md5 == in.both)
-test.file  %>% filter(md5 == in.both)
+train.file %>% filter(md5 %in% in.both)
+test.file  %>% filter(md5 %in% in.both)
 
 ###############################################################################
 
