@@ -4,7 +4,8 @@
 setwd("C:/Kaggle/2015/Plankton/Wnd-Charm/")
 
 sink("wndchrm-train-data.txt", split=TRUE)
-print(format(Sys.time(), "%Y-%m-%d-%H%M%S"))
+time.1 <- Sys.time()
+print(format(time.1, "%Y-%m-%d-%H%M%S"))
 
 TRAIN.BASE   <- "train"
 TRAIN.BINARY <- "train-binary"
@@ -96,11 +97,71 @@ for (k in 1:length(dirs))
 }
 
 dimnames(feature.matrix) = list(rowNames, columnNames)
+table(feature.matrix[,1])
 
+################################################################################
+### Remove constant columns.  How is that possible?
+min.col <- apply(feature.matrix, 2, min)
+max.col <- apply(feature.matrix, 2, max)
+N.removed <- sum(min.col == max.col)
+
+which(min.col == max.col)
+
+constant.columns <- feature.matrix[,min.col == max.col]
+head(constant.columns)
+tail(constant.columns)
+
+dim(feature.matrix)
+N.removed
+feature.matrix <- feature.matrix[,min.col != max.col]
+dim(feature.matrix)
+
+################################################################################
+### Save file
+
+print(format(Sys.time(), "%Y-%m-%d-%H%M%S"))
 save(feature.matrix, file=paste0(TRAIN.BINARY, "/plankton-train.Rdata"))
+print(format(Sys.time(), "%Y-%m-%d-%H%M%S"))
+
+################################################################################
+### SVD analysis; variance explained by first 50 eigenvalues
+
+scaled <- scale(feature.matrix[, -1])
+dim(scaled)
+
+svd1 <- svd(scaled)
+dim(svd1$u)
+length(svd1$d)
+dim(svd1$v)
+
+# For now, let's look at first 50
+N.eigen <- 50
+eigen <- svd1$d[1:N.eigen]
+
+pdf("wndchrm-train-data-eigenvalues.pdf")
+plot(eigen^2/sum(eigen^2),pch=19,
+     main="First 50 eigenvalues",
+     xlab="eigenvalue",
+     ylab="Fraction of variance explained by eigenvalue")
+grid()
+mtext(paste0(nrow(scaled), " rows, ", ncol(scaled), " variables"))
+
+plot(cumsum(eigen^2/sum(eigen^2)),pch=19,
+     main="First 50 eigenvalues",
+     xlab="eigenvalue",
+     ylab="Cumulative fraction of variance explained")
+grid()
+
+boxplot(svd1$v[,1:N.eigen],
+        main=paste("First", N.eigen, "right singular vectors"))
+
+dev.off()
 
 ################################################################################
 
-print(format(Sys.time(), "%Y-%m-%d-%H%M%S"))
+time.2 <- Sys.time()
+print(format(time.2, "%Y-%m-%d-%H%M%S"))
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+
 sink()
 
