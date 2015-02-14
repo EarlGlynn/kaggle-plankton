@@ -7,7 +7,8 @@ output: html_document
 *****
 
 Load wndchrm feature files for training cases and save to .Rdata file.
-# efg, 2015-02-09
+
+efg, 2015-02-09
 
 ```{r}
 time.1 <- Sys.time()
@@ -37,7 +38,7 @@ parseWndchrm <- function(wndchrm)
 }
 ```
 
-## Count files in all TRAIN.BASE diretories
+## Count files in all TRAIN.BASE directories
 
 ```{r}
 dirs <- list.dirs(path=TRAIN.BASE, full.names=FALSE, recursive=FALSE)
@@ -198,7 +199,6 @@ cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\
 
 *****
 
-*efg*
-@EarlGlynn
-`r format(Sys.time(), "%Y-%m-%d  %H%M")`         
+*efg* @EarlGlynn   
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`           
 

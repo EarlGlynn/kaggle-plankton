@@ -67,10 +67,11 @@ img {
 
 
 <hr />
-<p>Load wndchrm feature files for training cases and save to .Rdata file. # efg, 2015-02-09</p>
+<p>Load wndchrm feature files for training cases and save to .Rdata file.</p>
+<p>efg, 2015-02-09</p>
 <pre class="r"><code>time.1 &lt;- Sys.time()
 format(time.1, &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-11-205004&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-14-011447&quot;</code></pre>
 <pre class="r"><code>TRAIN.BASE   &lt;- &quot;train&quot;</code></pre>
 <div id="parse-wndchrm-file" class="section level2">
 <h2>Parse wndchrm file</h2>
@@ -91,8 +92,8 @@ format(time.1, &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
   invisible( list(header=header, filename=filename, values=values, features=features) )
 }</code></pre>
 </div>
-<div id="count-files-in-all-train.base-diretories" class="section level2">
-<h2>Count files in all TRAIN.BASE diretories</h2>
+<div id="count-files-in-all-train.base-directories" class="section level2">
+<h2>Count files in all TRAIN.BASE directories</h2>
 <pre class="r"><code>dirs &lt;- list.dirs(path=TRAIN.BASE, full.names=FALSE, recursive=FALSE)
 
 file_counts &lt;- integer(length(dirs))
@@ -415,10 +416,10 @@ dim(feature.matrix)</code></pre>
 <div id="save-feature.matrix-file" class="section level2">
 <h2>Save feature.matrix file</h2>
 <pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-11-205850&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-14-012550&quot;</code></pre>
 <pre class="r"><code>save(feature.matrix, file=&quot;plankton-train-wndchrm-features.Rdata&quot;)
 format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-11-205918&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-14-012617&quot;</code></pre>
 </div>
 <div id="svd-analysis-variance-explained-by-first-50-eigenvalues" class="section level2">
 <h2>SVD analysis; variance explained by first 50 eigenvalues</h2>
@@ -456,9 +457,9 @@ grid()</code></pre>
 <hr />
 <pre class="r"><code>time.2 &lt;- Sys.time()
 cat(sprintf(&quot;%.1f&quot;, as.numeric(difftime(time.2, time.1, units=&quot;secs&quot;))), &quot; secs\n&quot;)</code></pre>
-<pre><code>## 1398.3  secs</code></pre>
+<pre><code>## 1609.1  secs</code></pre>
 <hr />
-<p><em>efg</em> <span class="citation">@EarlGlynn</span> 2015-02-11 2113</p>
+<p><em>efg</em> <span class="citation">@EarlGlynn</span><br />2015-02-14 0141</p>
 </div>
 
 
