@@ -17,14 +17,13 @@ format(time.1, "%Y-%m-%d-%H%M%S")
 TRAIN.BASE   <- "train"
 ```
 
-## Parse wndchrm file
+## Parse wndchrm feature file
 
 ```{r}
 parseWndchrm <- function(wndchrm)
 {
   # For now, be very strict with header
   header   <- wndchrm[1]
-  #stopifnot(header == "2\t3.2")
 
   filename <- wndchrm[2]
 
@@ -117,7 +116,7 @@ dimnames(feature.matrix) = list(rowNames, columnNames)
 table(feature.matrix[,1])
 ```
 
-## Remove constant columns.  
+## Remove constant columns.
 
 How is it possible to have so many constant columns?
 
@@ -146,48 +145,49 @@ save(feature.matrix, file="plankton-train-wndchrm-features.Rdata")
 format(Sys.time(), "%Y-%m-%d-%H%M%S")
 ```
 
-## SVD analysis; variance explained by first 50 eigenvalues
+## SVD analysis
 
 ```{r}
-scaled <- scale(feature.matrix[, -1])
-dim(scaled)
+scaledTrain <- scale(feature.matrix[, -1])  # exclude class
+dim(scaledTrain)
 
-svd1 <- svd(scaled)
-dim(svd1$u)
-length(svd1$d)
-dim(svd1$v)
+svdTrain <- svd(scaledTrain)
+dim(svdTrain$u)
+length(svdTrain$d)
+dim(svdTrain$v)
 ```
 
 ```{r}
-save(scaled, svd1, file="plankton-train-wndchrm-svd.Rdata")
+save(scaledTrain, svdTrain, file="plankton-train-wndchrm-svd.Rdata")
 ```
 
-For now, let's look at first 50 eigenvalues ...
+For now, let's look at first 75 eigenvalues ...
 ```{r}
-N.eigen <- 50
-eigen <- svd1$d[1:N.eigen]
+Neigen <- 75
 ```
 
 ```{r, fig.width=7, fig.height=7}
-plot(eigen^2/sum(eigen^2),pch=19,
-     main="First 50 eigenvalues",
-     xlab="Eigenvalue index",
-     ylab="Fraction of variance explained by eigenvalue")
+plot(svdTrain$d[1:Neigen]^2 / sum(svdTrain$d^2),pch=19,
+     main=paste("Features associated with first", Neigen, "eigenvalues"),
+     xlab="Eigenvalue rank",
+     ylab="Fraction of variance explained by feature")
 grid()
-mtext(paste0(nrow(scaled), " rows, ", ncol(scaled), " variables"))
+mtext(paste0(nrow(scaledTrain), " rows, ", ncol(scaledTrain), " variables"))
 
-plot(cumsum(eigen^2/sum(eigen^2)),pch=19,
-     main="First 50 eigenvalues",
-     xlab="Eigenvalue Index",
+plot(cumsum(svdTrain$d[1:Neigen]^2 / sum(svdTrain$d^2)),pch=19,
+     main=paste("First", Neigen, "eigenvalues"),
+     xlab="Eigenvalue rank",
      ylab="Cumulative fraction of variance explained")
 grid()
 ```
 
-Features associated with the first 50 eigenvalues explain nearly 100% of variance.
+Features associated with the first Neigen eigenvalues explain large share of variance.
 
 ```{r, fig.width=7, fig.height=7}
-boxplot(svd1$v[,1:N.eigen],
-        main=paste("First", N.eigen, "right singular vectors"))
+boxplot(svdTrain$v[,1:Neigen],
+        xlab="Eigenvalue rank",
+        main="Boxplots of right singular vector weights")
+mtext(paste("First", Neigen, "right singular vectors"))
 ```
 
 *****
@@ -199,6 +199,7 @@ cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\
 
 *****
 
-*efg* @EarlGlynn   
-`r format(Sys.time(), "%Y-%m-%d  %H%M")`           
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
 

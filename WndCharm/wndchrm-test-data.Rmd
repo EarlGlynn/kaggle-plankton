@@ -1,0 +1,127 @@
+---
+title: "Plankton testing file with wndchrm features"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+Load wndchrm feature files for test cases and save to .Rdata file.
+
+efg, 2015-02-14
+
+```{r}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+
+TEST.BASE   <- "test"
+```
+
+## Parse wndchrm feature file
+
+```{r}
+parseWndchrm <- function(wndchrm)
+{
+  # For now, be very strict with header
+  header   <- wndchrm[1]
+
+  filename <- wndchrm[2]
+
+  wndchrm <- wndchrm[-1:-2]
+  splits <- strsplit(wndchrm, "\t")
+
+  values   <- as.numeric(unlist(lapply(splits, "[", 1)))
+  features <- unlist(lapply(splits, "[", 2))
+
+  invisible( list(header=header, filename=filename, values=values, features=features) )
+}
+```
+
+## Create empty feature.matrix
+
+Setup feature matrix based on first .sig file in directory
+
+```{r}
+files <- list.files(path=TEST.BASE, pattern="^.*\\.sig$")
+Nfiles <- length(files)
+```
+
+Read wndchrm file but ignore first two rows for now.
+
+```{r}
+wndchrm <- readLines(paste0(TEST.BASE, "/", files[1]))
+parsed <- parseWndchrm(wndchrm)
+```
+
+Allocate feature matrix:
+
+* One row for each file.  Once column for each feature.
+
+```{r}
+feature.matrix <- matrix(0, nrow=Nfiles, ncol=length(parsed$features))
+dim(feature.matrix)
+object.size(feature.matrix)
+
+rowNames <- files
+columnNames <- parsed$features # R accepts almost any string as column name
+```
+
+## Loop through files and fill feature matrix
+
+```{r}
+for (i in 1:Nfiles)
+{
+  if (i %% 5000 == 1)
+  {
+    cat(i, files[i], "\n")
+    flush.console()
+  }
+  wndchrm <- readLines(paste0(TEST.BASE, "/", files[i]))
+  parsed <- parseWndchrm(wndchrm)
+  stopifnot(all(columnNames == parsed$features)) # check column names
+  feature.matrix[i,] <- parsed$values
+}
+```
+
+## Remove constant columns.
+
+How is it possible to have so many constant columns?
+
+```{r}
+min.col <- apply(feature.matrix, 2, min)
+max.col <- apply(feature.matrix, 2, max)
+N.removed <- sum(min.col == max.col)
+
+which(min.col == max.col)
+write.csv(which(min.col == max.col), "plankton-test-constant-columns.csv")
+
+constant.columns <- feature.matrix[,min.col == max.col]
+head(constant.columns, 1)
+
+dim(feature.matrix)
+N.removed
+feature.matrix <- feature.matrix[,min.col != max.col]
+dim(feature.matrix)
+```
+
+## Save feature.matrix file
+
+```{r}
+format(Sys.time(), "%Y-%m-%d-%H%M%S")
+save(feature.matrix, file="plankton-test-wndchrm-features.Rdata")
+format(Sys.time(), "%Y-%m-%d-%H%M%S")
+```
+
+*****
+
+```{r}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
+
