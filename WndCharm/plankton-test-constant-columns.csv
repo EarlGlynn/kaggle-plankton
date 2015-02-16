@@ -1,0 +1,22 @@
+"","ColName","ColNumber"
+"1","Chebyshev Coefficients () [29]",165
+"2","Chebyshev Coefficients () [30]",166
+"3","Chebyshev Coefficients () [31]",167
+"4","Multiscale Histograms (Fourier ()) [0]",596
+"5","Multiscale Histograms (Fourier ()) [1]",597
+"6","Multiscale Histograms (Fourier ()) [5]",601
+"7","Multiscale Histograms (Fourier ()) [6]",602
+"8","Multiscale Histograms (Fourier ()) [10]",606
+"9","Multiscale Histograms (Fourier ()) [11]",607
+"10","Multiscale Histograms (Fourier ()) [12]",608
+"11","Multiscale Histograms (Fourier ()) [13]",609
+"12","Multiscale Histograms (Fourier ()) [18]",614
+"13","Multiscale Histograms (Fourier ()) [19]",615
+"14","Multiscale Histograms (Fourier ()) [20]",616
+"15","Multiscale Histograms (Fourier ()) [21]",617
+"16","Multiscale Histograms (Fourier ()) [22]",618
+"17","Multiscale Histograms (Fourier (Wavelet ())) [0]",1724
+"18","Tamura Textures (Fourier (Chebyshev ())) [0]",1892
+"19","Multiscale Histograms (Chebyshev (Wavelet ())) [1]",2013
+"20","Pixel Intensity Statistics (Edge ()) [3]",2357
+"21","Multiscale Histograms (Fourier (Edge ())) [0]",2572
