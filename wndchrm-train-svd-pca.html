@@ -69,54 +69,64 @@ img {
 <hr />
 <pre class="r"><code>time.1 &lt;- Sys.time()
 format(time.1, &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211239&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102701&quot;</code></pre>
 <div id="load-training-feature.matrix-file" class="section level2">
 <h2>Load TRAINING feature.matrix file</h2>
 <pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211239&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102701&quot;</code></pre>
 <pre class="r"><code>load(&quot;plankton-train-wndchrm-features.Rdata&quot;, verbose=TRUE)</code></pre>
 <pre><code>## Loading objects:
 ##   feature.matrix</code></pre>
 <pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211247&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102705&quot;</code></pre>
 <p>feature.matrix is a matrix of doubles for storage efficiency – much better than a data.frame.</p>
 <pre class="r"><code>class(feature.matrix)</code></pre>
 <pre><code>## [1] &quot;matrix&quot;</code></pre>
 <pre class="r"><code>typeof(feature.matrix)</code></pre>
 <pre><code>## [1] &quot;double&quot;</code></pre>
 </div>
+<div id="center-and-scale-data" class="section level2">
+<h2>center and scale data</h2>
+<p>Create z values:</p>
+<p><span class="math">\[z = \frac{x - \mu_x}{\sigma_x}\]</span></p>
+<pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102705&quot;</code></pre>
+<pre class="r"><code>plankton &lt;- feature.matrix[,1]              # plankton class
+scaledTrain &lt;- scale(feature.matrix[, -1])  # exclude class variable in first column
+format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102727&quot;</code></pre>
+<pre class="r"><code>dim(scaledTrain)</code></pre>
+<pre><code>## [1] 30336  2894</code></pre>
+<pre class="r"><code>save(plankton, scaledTrain, file=&quot;plankton-train-wndchrm-scaled.Rdata&quot;)</code></pre>
+</div>
 <div id="svd-analysis" class="section level2">
 <h2>SVD analysis</h2>
 <pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211247&quot;</code></pre>
-<pre class="r"><code>scaledTrain &lt;- scale(feature.matrix[, -1])  # exclude class variable in first column
-format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211310&quot;</code></pre>
-<pre class="r"><code>dim(scaledTrain)</code></pre>
-<pre><code>## [1] 30336  2894</code></pre>
-<pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-211310&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-102752&quot;</code></pre>
 <pre class="r"><code>svdTrain &lt;- svd(scaledTrain)
 format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-212545&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-104021&quot;</code></pre>
 <p>Let’s inspect sizes of the three <a href="http://en.wikipedia.org/wiki/Singular_value_decomposition">SVD</a> components, u, d, and v.</p>
 <p>(u and v are unitary rotation matrices and d is the diagonal of a scaling matrix.)</p>
+<p>Note: Original matrix can be constructed from SVD decomposition:</p>
+<pre><code>svdTrain$u %*% diag(svdTrain$d) %*% t(svdTrain$v)</code></pre>
 <pre class="r"><code>dim(svdTrain$u)</code></pre>
 <pre><code>## [1] 30336  2894</code></pre>
 <pre class="r"><code>length(svdTrain$d)</code></pre>
 <pre><code>## [1] 2894</code></pre>
 <pre class="r"><code>dim(svdTrain$v)</code></pre>
 <pre><code>## [1] 2894 2894</code></pre>
+<pre class="r"><code>save(svdTrain, file=&quot;plankton-train-wndchrm-svd.Rdata&quot;)</code></pre>
 </div>
 <div id="principal-component-analysis" class="section level2">
 <h2>Principal Component Analysis</h2>
 <p>Let’s compute PCs separately with <em>prcomp</em> – but PCA and SVD results are related.</p>
 <pre class="r"><code>format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-212545&quot;</code></pre>
+<pre><code>## [1] &quot;2015-02-16-104056&quot;</code></pre>
 <pre class="r"><code>pcaTrain &lt;- prcomp(scaledTrain)   # If not already scaled, use scale.=TRUE
 format(Sys.time(), &quot;%Y-%m-%d-%H%M%S&quot;)</code></pre>
-<pre><code>## [1] &quot;2015-02-15-214203&quot;</code></pre>
-<pre class="r"><code>save(scaledTrain, svdTrain, pcaTrain, file=&quot;plankton-train-wndchrm-svd-pca.Rdata&quot;)</code></pre>
+<pre><code>## [1] &quot;2015-02-16-105728&quot;</code></pre>
+<pre class="r"><code>save(pcaTrain, file=&quot;plankton-train-wndchrm-pca.Rdata&quot;)</code></pre>
 </div>
 <div id="first-75-features" class="section level2">
 <h2>First 75 Features</h2>
@@ -308,10 +318,10 @@ pca3d(pcaTrain, group=as.factor(feature.matrix[,1]))</code></pre>
 <hr />
 <pre class="r"><code>time.2 &lt;- Sys.time()
 cat(sprintf(&quot;%.1f&quot;, as.numeric(difftime(time.2, time.1, units=&quot;secs&quot;))), &quot; secs\n&quot;)</code></pre>
-<pre><code>## 1926.2  secs</code></pre>
+<pre><code>## 1928.6  secs</code></pre>
 <hr />
 <p><em>efg</em> <span class="citation">@EarlGlynn</span></p>
-<p>2015-02-15 2144</p>
+<p>2015-02-16 1059</p>
 </div>
 
 
