@@ -1,0 +1,173 @@
+---
+title: "Caret Experiments"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+# One [Protists, class 2] Versus All
+
+```{r}
+library(caret)
+set.seed(19937)
+```
+
+```{r}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```                                       
+
+### Load scaled TRAINING file 
+
+```{r}
+load("plankton-train-wndchrm-scaled.Rdata", verbose=TRUE) 
+```
+
+### Load SVD results
+
+```{r}
+load("plankton-train-wndchrm-svd.Rdata", verbose=TRUE)
+dimnames(svdTrain$v) <- list(colnames(scaledTrain), 1:ncol(svdTrain$v))
+```
+
+### Select "important" variables from SVD right singular vectors
+
+Select boxplot outlier variables for features.  If no outliers, select the Nselect highest or lowest values.
+
+For now, let's limit to Nlimit variables per feature.
+
+```{r votes, cache=TRUE}
+votes  <- rep(0.0, nrow(svdTrain$v))     
+
+features <- 100
+   
+for (i in 1:features)
+{ 
+  # Use ad hoc heuristic to accept more variables from features with eigenvalues 
+  # that account for higher variance:  2 * [7, 6, 5, 4, 3, 2, 1, 1, 1, ...]
+  Nselect  <- max(51-i, 1)   # ad hoc heuristic 
+  #Nselect <- 2
+  
+  values      <- sort(svdTrain$v[,i]) 
+  
+  #PC.stats <- boxplot.stats(values)
+  #values <- PC.stats$out
+  
+  values.low  <- values[1:Nselect]  
+  values.high <- values[(length(values)-Nselect+1):length(values)]                                                                   
+  values <- c(values.low, values.high)  
+  
+  if (length(values) > 0)
+  {  
+    ballot <- as.integer(svdTrain$v[,i] %in% values)
+  
+    votes <- votes + ballot
+  }
+}
+
+table(votes)
+sum(votes > 0)
+selectedVariables <- (votes > 0)
+rownames(svdTrain$v)[selectedVariables]
+which(selectedVariables)
+
+all(rownames(svdTrain$v)[selectedVariables] == colnames(scaledTrain)[which(selectedVariables)])
+
+```
+
+### Create Training and Validation subsets from Training data
+
+```{r subsets, cache=TRUE}
+rawTrain <- scaledTrain[,selectedVariables] 
+dim(rawTrain)
+```
+
+### Setup parallel processing
+
+```{r parallel}
+library(doParallel)
+rCluster <- makePSOCKcluster(6)  # Use 6 cores
+registerDoParallel(rCluster) 
+```
+
+### Remove near-zero variance variables
+
+```{r nearzero, cache=TRUE}
+nzv <- nearZeroVar(rawTrain, saveMetrics=TRUE)
+nzv[nzv$nzv,]
+sum(nzv$nzv)
+rawTrain <- rawTrain[,!nzv$nzv]
+dim(rawTrain)
+```
+
+### Remove variables with high correlation to others 
+
+```{r highcor, cache=TRUE}
+cor.matrix <- cor(rawTrain)
+cor.high   <- findCorrelation(cor.matrix, cutoff=0.90)
+
+high.cor.remove <- row.names(cor.matrix)[cor.high]
+high.cor.remove
+length(high.cor.remove) 
+
+rawTrain <- rawTrain[, -cor.high]
+dim(rawTrain)
+```
+
+### Recode Plankton classes for one versus all
+```{r}
+protists <- c(2)  #  c(1:3, 83:87)
+plankton[!(plankton %in% protists)] <- 0  # all others
+table(plankton)
+```
+
+### Partition raw training data into a training and validation set.
+
+```{r subset, cache=TRUE}
+TRAIN.PERCENT <- 2/3
+inTrainSetIndex <- createDataPartition(y=plankton, p=TRAIN.PERCENT, list=FALSE)
+
+training   <- rawTrain[ inTrainSetIndex,]
+trainPlankton <- as.factor(plankton)[inTrainSetIndex]
+dim(training)
+length(trainPlankton)
+
+validation <- rawTrain[-inTrainSetIndex,]
+validPlankton <- as.factor(plankton)[-inTrainSetIndex]
+dim(validation) 
+length(validPlankton)
+```
+
+### Apply specified caret method
+
+```{r caret, cache=TRUE}
+PREPROCESS <- NULL
+METHOD <- "lda"                
+fit <- train(training, trainPlankton, preProcess=PREPROCESS, method=METHOD)
+summary(fit)
+
+OutOfSample  <- predict(fit, newdata=validation)
+confusion <- confusionMatrix(validPlankton, OutOfSample)  
+
+options(width=120)
+confusion
+```
+
+```{r}
+stopCluster(rCluster)
+```
+
+*****
+
+```{r}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
+                                                                          
