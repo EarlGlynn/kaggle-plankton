@@ -1,0 +1,84 @@
+---
+title: "Distance Experiment"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+setwd("C:/Kaggle/2015/Plankton/Wnd-Charm/")
+
+```{r}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```                                       
+
+### Load scaled TRAINING file 
+
+```{r, comment=NA}
+load("plankton-train-wndchrm-scaled.Rdata", verbose=TRUE) 
+```
+
+```{r}
+N <- 121
+zeroCount <- integer(N)
+zeroList <- list()
+
+for (i in 1:N)
+{
+  feature <- scaledTrain[plankton == i,]
+  sigma <- apply(feature, 2, sd)
+  sum(sigma == 0)
+  zeroCount[i] <- sum(sigma == 0)
+  zeroList[[i]] <- which(sigma == 0)
+}
+
+M <- ncol(scaledTrain)
+
+zeroMatrix <- matrix(0, N, M) 
+dimnames(zeroMatrix) <- list(1:N, 1:M)
+
+for (i in 1:N)
+{
+  zeroMatrix[i, zeroList[[i]]] <- 1
+}
+
+allZeroColumns <- apply(zeroMatrix, 2, sum)
+
+x <- zeroMatrix[,-which(allZeroColumns==0)]
+```
+
+```{r, results='hide', message=FALSE, warnings=FALSE, error=FALSE}
+library(gplots)
+pdf("25-Distances-ZeroVariance-Heatmap.pdf", width=10.5, height=8)
+heatmap.2(x, scale="none", trace="none", cexRow=0.45, cexCol=0.2, 
+          col=c("blue", "white"), 
+          key.title="Zero Variance", key.xlab=NA,
+          key.xtickfun=function() {
+              cex <- par("cex")*par("cex.axis")
+              side <- 1
+              line <- 0
+              col <- par("col.axis")
+              font <- par("font.axis")
+              mtext("yes", side=side, at=0, adj=0,
+                    line=line, cex=cex, col=col, font=font)
+              mtext("no", side=side, at=1, adj=1,
+                    line=line, cex=cex, col=col, font=font)
+              return(list(labels=FALSE, tick=FALSE))
+         })
+dev.off()
+```
+
+*****
+
+```{r}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
+                                                                          
