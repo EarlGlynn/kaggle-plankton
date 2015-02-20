@@ -1,0 +1,230 @@
+---
+title: "Zero Variance Plankton Class Differences"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+## Invariant features by plankton class?
+
+Nearly 3000 wnd-chrm features were computed for all plankton images.
+
+In the training set, can we find a set of the wnd-chrm features by plankton class that have very low variance?  That is, can we find a set of signature features for each class that are invariant, or nearly invariant?  
+
+Is the set of features common to a class unique among other plankton classes?
+
+
+```{r}
+#setwd("C:/Kaggle/2015/Plankton/Wnd-Charm/")
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```                                       
+
+### Load scaled TRAINING file 
+
+Also, read *plankton* classifications
+
+```{r, comment=NA}
+load("plankton-train-wndchrm-scaled.Rdata", verbose=TRUE) 
+```
+
+```{r}
+zeroList <- list()
+```
+
+### Form list of low (zero) variance features by class
+
+In preliminary experiments, a number of features had zero variance within a class.  Can we use class zero variance features as a signature?
+
+```{r}
+for (i in 1:length(unique(plankton)))
+{
+  feature <- scaledTrain[plankton == i,]
+  sigma   <- apply(feature, 2, sd)
+ 
+  zeroList[[i]] <- list()
+  zeroList[[i]]$feature   <- feature
+  zeroList[[i]]$zeroCount <- sum(sigma == 0)
+  zeroList[[i]]$zeroIndex <- which(sigma == 0)
+  zeroList[[i]]$values    <- feature[1,which(sigma == 0)] 
+}
+```
+
+### Explore list of lists
+
+Let's look at the first three classes, which are at least somewhat similar:
+
+#### 1. acantharia_protist (889 images)
+
+```{r, comment=NA}
+dim(zeroList[[1]]$feature)
+zeroList[[1]]$zeroCount
+
+options(width=140)
+data.frame(index=zeroList[[1]]$zeroIndex, value=zeroList[[1]]$values)
+```
+
+#### 2. acantharia_protist_big_center (13 images)
+
+```{r, comment=NA}
+dim(zeroList[[2]]$feature)
+zeroList[[2]]$zeroCount
+data.frame(index=zeroList[[2]]$zeroIndex, value=zeroList[[2]]$values)
+```
+
+#### 3. acantharia_protist_halo (71 images)
+
+```{r, comment=NA}
+dim(zeroList[[3]]$feature)
+zeroList[[3]]$zeroCount
+data.frame(index=zeroList[[3]]$zeroIndex, value=zeroList[[3]]$values)
+```
+
+#### Venn diagram of features in Plankton classes 1, 2, 3 (protists)
+
+```{r, message=NA}
+
+acantharia <- as.integer(zeroList[[1]]$zeroIndex)
+bigcenter  <- as.integer(zeroList[[2]]$zeroIndex)
+halo       <- as.integer(zeroList[[3]]$zeroIndex)
+
+library(VennDiagram)
+venn.plot <- venn.diagram(list(A=acantharia, B=bigcenter, C=halo), 
+                          filename="Protists123.tif", width=600, height=600, resolution=100,
+                          main="Protists Plankton Common Features",
+                          category.names=c("acantharia protist", 
+                                           "acantharia protist big center", 
+                                           "acantharia protist halo"))
+```
+
+![Protists123](Protists123.tif)
+
+#### Set differences
+
+```{r, message=NA}
+setdiff(acantharia, bigcenter)
+setdiff(acantharia, halo)
+setdiff(bigcenter, halo)
+```
+
+
+#### Venn diagram of features in Plankton classes 83 - 87 (protists)
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[83]]$zeroIndex), 
+                               B=as.integer(zeroList[[84]]$zeroIndex),
+                               C=as.integer(zeroList[[85]]$zeroIndex),
+                               D=as.integer(zeroList[[86]]$zeroIndex),
+                               E=as.integer(zeroList[[87]]$zeroIndex)),
+                          filename="Protists83-87.tif", width=600, height=600, resolution=100,
+                          main="Protists Plankton Common Features",
+                          category.names=c("dark center", 
+                                           "fuzzy olive", 
+                                           "noctiluca", 
+                                           "other", 
+                                           "star"))
+```
+
+![Protists8387](Protists83-87.tif)
+
+
+#### Venn diagram of features in Plankton classes 5 - 8 (appendicularian)
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[5]]$zeroIndex), 
+                               B=as.integer(zeroList[[6]]$zeroIndex),
+                               C=as.integer(zeroList[[7]]$zeroIndex),
+                               D=as.integer(zeroList[[8]]$zeroIndex)),
+                          filename="Appendicularian5-8.tif", width=600, height=600, resolution=100,
+                          main="Appendicularian Plankton Common Features",
+                          category.names=c("fritillaridae", 
+                                           "s shape",                         
+                                           "slight curve", 
+                                           "straight"))
+```
+
+![Appendicularian58](Appendicularian5-8.tif)
+
+#### Venn diagram of features in Plankton classes:  Detritus
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[ 50]]$zeroIndex), 
+                               B=as.integer(zeroList[[ 34]]$zeroIndex),
+                               C=as.integer(zeroList[[ 35]]$zeroIndex),
+                               D=as.integer(zeroList[[ 36]]$zeroIndex)),
+                          filename="Detrius.tif", width=600, height=600, resolution=100,
+                          main="Detritus Common Features",
+                          category.names=c("fecal pellet", 
+                                           "detritus blob",                         
+                                           "detritus filamentous", 
+                                           "detritus other"))
+```
+
+![Detrius](Detrius.tif)
+
+
+#### Venn diagram of features in Plankton classes:  Unknown
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[119]]$zeroIndex),
+                               B=as.integer(zeroList[[120]]$zeroIndex),                      
+                               C=as.integer(zeroList[[121]]$zeroIndex)),
+                          filename="Unknown.tif", width=600, height=600, resolution=100,
+                          main="Unknown Plankton Common Features",
+                          category.names=c("unknown blobs",                                                                  
+                                           "unknown sticks", 
+                                           "unknown unclassified"))
+```
+
+![Unknown](Unknown.tif)
+
+#### Venn diagram of features in Plankton classes:  Fish Larvae
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[51]]$zeroIndex), 
+                               B=as.integer(zeroList[[52]]$zeroIndex),
+                               C=as.integer(zeroList[[53]]$zeroIndex),  # Leave out 54 for now
+                               D=as.integer(zeroList[[55]]$zeroIndex),
+                               E=as.integer(zeroList[[56]]$zeroIndex)),
+                          filename="FishLarvae51-56.tif", width=600, height=600, resolution=100,
+                          main="Fish Larvae Plankton Common Features",
+                          category.names=c("deep body", 
+                                           "leptocephali",                         
+                                           "medium body",                                                                   
+                                           "thin body", 
+                                           "very thin body"))
+```
+
+![FishLarvae5156](FishLarvae51-56.tif)
+
+#### Venn diagram of features in Plankton classes:  Ctenophore
+
+```{r, message=NA}
+venn.plot <- venn.diagram(list(A=as.integer(zeroList[[29]]$zeroIndex), 
+                               B=as.integer(zeroList[[30]]$zeroIndex),
+                               C=as.integer(zeroList[[31]]$zeroIndex),
+                               D=as.integer(zeroList[[32]]$zeroIndex)),
+                          filename="Ctenophore.tif", width=600, height=600, resolution=100,
+                          main="Ctenophore Common Features",
+                          category.names=c("cestid", 
+                                           "cydippid no tentacles",                         
+                                           "cydippid tentacles", 
+                                           "lobate"))
+```
+
+![Ctenophore](Ctenophore.tif)
+
+*****
+
+```{r}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
+                                                                          
