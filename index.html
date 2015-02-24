@@ -32,9 +32,10 @@
       <div class="inner clearfix">
         <section id="main-content"> Earl F Glynn<br>
           <br>
-          Work in progress:&nbsp; updated 2015-02-15<br>
+          Work in progress:&nbsp; updated 2015-02-24<br>
           <h3> <a id="intro" class="anchor" href="#intro"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction
+
 
 
 
@@ -77,20 +78,7 @@
             height="218" width="455"><br>
           <h3> <a id="tutorials" class="anchor" href="#tutorials"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Tutorials
-
-
-
-
-
-
-
-
-
-
-
-
-
-            [Windows]<br>
+            and Explorations [Windows]<br>
           </h3>
           <p>I went through two online tutorials to understand the data
             and possible processing a bit better: </p>
@@ -114,36 +102,13 @@
 
 
 
+
               notebook <a
                 href="BenReuven-Kaggle-Plankton-tutorial-submission.html">BenReuven-Kaggle-Plankton-tutorial-submission.html</a></li>
-          </ul>
-          Note:&nbsp; HTML versions of IPython notebooks are linked
-          here, but the operational IPython notebooks are in the
-          repository. <br>
-          <ul>
-          </ul>
-          <p> </p>
-          <h3> <a id="explorations" class="anchor" href="#explorations"
-              aria-hidden="true"><span class="octicon octicon-link"></span></a>Explorations
-
-
-
-
-
-
-
-
-
-
-
-
-
-            [Windows]</h3>
-          <p>Additional experiments:<br>
-          </p>
-          <ul>
             <li>Experiments showing more details than original tutorial:
-              IPython notebook <a href="Plankton%20Explorer.html">Plankton
+              IPython notebook <a
+                href="file:///C:/GitHub/kaggle-plankton/Plankton%20Explorer.html">Plankton
+
 
 
 
@@ -151,27 +116,18 @@
 
 
                 Explorer.html</a></li>
-            <li>Explore Python’s <i>skimage regionprops</i> for image
-              features: IPython notebook <a
-                href="Plankton%20skimage%20region%20properties.html">Plankton
-
-
-
-
-
-
-
-
-
-
-
-
-                skimage region properties.html </a></li>
           </ul>
+          Note:&nbsp; HTML versions of IPython notebooks are linked
+          here, but the operational IPython notebooks are in the
+          repository. <br>
+          <ul>
+          </ul>
+          <p> </p>
           <ul>
           </ul>
           <h3> <a id="duplicates" class="anchor" href="#duplicates"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Duplicate
+
 
 
 
@@ -198,6 +154,7 @@
 
 
 
+
             <br>
           </p>
           <p>See example duplicates:<br>
@@ -213,11 +170,13 @@
 
 
 
+
               Train images 14864.jpg and 271.jpg, oddly assigned to two
               different classes, were found to be duplicates using
               script <b>01-train-md5.R</b>.<br>
             </li>
             <li><b>Test</b>:&nbsp; <a href="04-test-duplicates.pdf">04-test-duplicates.pdf</a>.&nbsp;
+
 
 
 
@@ -270,12 +229,33 @@ counts
             </i></p>
           <h3> <a id="wndchrm" class="anchor" href="#wndchrm-features"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>
-            wndchrm Image Features<br>
+            skimage Image Features<br>
           </h3>
-          <p>Instead of pursuing <i>regionprops</i> for a relatively
-            small number of additional image properties, a program <i>wndchrm</i>
-            was found that computes almost 3,000 features for each
-            image.<br>
+          <p>More than two dozen <i>skimage regionprops</i> image
+            features were computed using this IPython notebook:&nbsp; <a
+href="file:///C:/GitHub/kaggle-plankton/Plankton%20skimage%20region%20properties.html">Plankton
+
+
+
+
+
+
+
+
+
+
+
+
+
+              skimage region properties.html</a>. <br>
+          </p>
+          <p>The feature sets were computed for both the training and
+            test sets.<br>
+          </p>
+          <h3>wndchrm Image Features<br>
+          </h3>
+          <p>A program <i>wndchrm</i> was found that computes almost
+            3,000 features for each image.<br>
           </p>
           <p>The <b>wndchrm command-line utility</b> is described in
             these two papers:</p>
@@ -298,11 +278,13 @@ counts
 
 
 
+
             <i>A generalized pattern recognition system for images
               developed by the Goldberg group at the NIH/NIA. </i><br>
           </p>
           <p><a
               href="http://vfacstaff.ltu.edu/lshamir/downloads/ImageClassifier/">Last
+
 
 
 
@@ -332,12 +314,14 @@ counts
 
 
 
+
               [Train numbers for each of 121 directories – oops
               directory count was 122. Test total count is 130,400.]</li>
             <li>Fix problems with two directories by re-running
               conversion for those directories after manually cleaning
               some directory problems:&nbsp; <a
                 href="Convert%20two%20notebooks%20jpg%20to%20tif.html">Convert
+
 
 
 
@@ -356,6 +340,7 @@ counts
           </ul>
           <h3> <a id="wndchrm" class="anchor" href="#wndchrm"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Computation
+
 
 
 
@@ -404,6 +389,7 @@ counts
                 href="wndchrm-train-svd-pca.html">wndchrm-train-svd-pca.html</a>.&nbsp;
 
 
+
               The first three principal components of the training
               feature matrix can be viewed using the R pca3d package:<br>
             </li>
@@ -431,6 +417,7 @@ counts
 
 
 
+
               The file <b>plankton-test-wndchrm-features.Rdata</b> is
               1.1 GB in size. See <a href="wndchrm-test-data.html">wndchrm-test-data.htm</a>l.&nbsp;</li>
           </ul>
@@ -453,6 +440,7 @@ href="https://github.com/EarlGlynn/kaggle-plankton/tarball/master"
           <p>This page was generated by <a
               href="https://pages.github.com">GitHub Pages</a> using the
             Architect theme by <a href="https://twitter.com/jasonlong">Jason
+
 
 
 
