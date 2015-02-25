@@ -1,0 +1,106 @@
+---
+title: "Form final image feature set"
+author: "Earl F Glynn"
+---
+
+# Combine wndchrm and skimage image features:  training set
+
+*****
+
+```{r}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```      
+
+## Load files
+
+### Load wndchrm features 
+
+feature.matrix is a matrix
+
+```{r, comment=NA}
+load(file="../Wnd-Charm/plankton-train-wndchrm-features.Rdata", verbose=TRUE)   
+str(feature.matrix)
+```
+
+one origin
+
+```{r, comment=NA}
+counts1 <- table(feature.matrix[,1])
+counts1
+```
+
+### Load skimage features
+
+skimage is a data.frame
+
+```{r, comment=NA}
+skimage <- read.csv("../skimage/train-properties-MASTER.csv", as.is=TRUE)
+names(skimage)
+```
+
+### Load index conversion chart
+
+```{r}
+xlate <- read.csv("wndchrm-skimage-index-translate.csv", as.is=TRUE)
+
+skiorder <- skimage$train
+```
+
+## Convert skimage class to wndchrm class
+
+Use brute force here
+
+```{r}
+for (i in 1:121)
+{
+  skimage$train[skiorder == xlate$skimage[i]] <- xlate$wndchrm[i]
+}
+```
+
+### standardize row order sort:  plankton class, filename
+
+wndchrm <- feature.matrix[order(feature.matrix[,1], row.names(feature.matrix) ),]
+
+skimage <- skimage[order(skimage$train, skimage$filename), ]
+
+## Do classes and files line up?
+
+### Verify match by plankton class
+
+```{r}
+sum((skimage$train) == feature.matrix[,1])
+```
+
+### Verify match by filename
+
+wndchrm
+```{r}
+splits <- strsplit(row.names(feature.matrix), "-")
+wndchrmFileIndex <- unlist(lapply(splits, "[", 1))
+head(wndchrmFileIndex)
+```
+
+skimage
+```{r}
+splits <- strsplit(skimage$filename, "\\.")
+skimageFileIndex <- unlist(lapply(splits, "[", 1))
+
+all(wndchrmFileIndex == skimageFileIndex)
+sum(wndchrmFileIndex == skimageFileIndex)
+```
+
+## With alignment now, combine feature sources
+
+*****
+
+```{r}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`               
