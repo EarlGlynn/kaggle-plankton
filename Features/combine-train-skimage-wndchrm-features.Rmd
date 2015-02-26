@@ -1,9 +1,7 @@
 ---
-title: "Form final image feature set"
+title: "Combine wndchrm and skimage image features"
 author: "Earl F Glynn"
 ---
-
-# Combine wndchrm and skimage image features:  training set
 
 *****
 
@@ -11,8 +9,9 @@ author: "Earl F Glynn"
 time.1 <- Sys.time()
 format(time.1, "%Y-%m-%d-%H%M%S")
 ```      
+# Training set
 
-## Load files
+## Load Training Set files
 
 ### Load wndchrm features 
 
@@ -21,14 +20,17 @@ feature.matrix is a matrix
 ```{r, comment=NA}
 load(file="../Wnd-Charm/plankton-train-wndchrm-features.Rdata", verbose=TRUE)   
 str(feature.matrix)
+trainFeatures <- colnames(feature.matrix)
 ```
 
-one origin
+Column 1 of the feature.matrix defines the plankton **class**.
 
 ```{r, comment=NA}
 counts1 <- table(feature.matrix[,1])
 counts1
 ```
+
+The feature.matrix row names define the image filename.  For example, the original image 100224.jpg was converted to 100224.tif.  The file of wndchrm properties was named 100224-l.sig, which is the rowname of feature.matrix.
 
 ### Load skimage features
 
@@ -36,10 +38,23 @@ skimage is a data.frame
 
 ```{r, comment=NA}
 skimage <- read.csv("../skimage/train-properties-MASTER.csv", as.is=TRUE)
-names(skimage)
+str(skimage)
+head(skimage,2)
 ```
 
+**skimage$train** defines the plankton class.  
+
+**skimage$filename** defines the image filename (e.g., 10024.jpg).
+
+Filename comparisons betweem skimage and the feature.matrix must drop the extension (e.g., 10024).
+
 ### Load index conversion chart
+
+The cause was not investigated, but for some reason traversing the directory tree of plankton .tif files using CentOS/IPython resulted in a slightly different directory order than traversing the corresponding directory tree of the original .jpg files.  
+
+Instead of resolving the original problem, a conversion table was created the tells the order for the two sources.
+
+Here skimage rows are ordered to match the feature.matrix rows using filenames.
 
 ```{r}
 xlate <- read.csv("wndchrm-skimage-index-translate.csv", as.is=TRUE)
@@ -60,15 +75,17 @@ for (i in 1:121)
 
 ### standardize row order sort:  plankton class, filename
 
+```{r}
 wndchrm <- feature.matrix[order(feature.matrix[,1], row.names(feature.matrix) ),]
-
 skimage <- skimage[order(skimage$train, skimage$filename), ]
+```
 
 ## Do classes and files line up?
 
 ### Verify match by plankton class
 
 ```{r}
+all((skimage$train) == feature.matrix[,1])
 sum((skimage$train) == feature.matrix[,1])
 ```
 
@@ -90,7 +107,72 @@ all(wndchrmFileIndex == skimageFileIndex)
 sum(wndchrmFileIndex == skimageFileIndex)
 ```
 
-## With alignment now, combine feature sources
+## With files aligned now, combine feature sources
+
+Drop columns skimage$train and skimage$filename since they align with corresponding info in the feature.matrix.
+
+```{r, comment=NA}
+str(skimage)
+
+skimage$filename <- NULL
+skimage$train    <- NULL
+
+str(skimage)
+
+```
+
+Convert to matrix and cbind to feature.matrix
+
+```{r, comment=NA}
+skimage <- as.matrix(skimage)
+
+dim(feature.matrix)
+dim(skimage)
+
+feature.matrix <- cbind(feature.matrix, skimage)
+dim(feature.matrix)
+```
+
+Let's treat the plankton class as a separate vector and remove class from the matrix
+
+```{r}
+train.class    <- feature.matrix[, 1]
+train.features <- feature.matrix[,-1]
+```
+
+Final look at number of images by feature
+
+```{r, comment=NA}
+table(train.class)
+```
+
+## Save train data to .Rdata file for fast loads
+```{r, comment=NA}
+object.size(train.features)
+object.size(train.class)
+save(train.features, train.class, file="plankton-train-wndchrm-skimage-features.Rdata")
+```
+
+Save training and testing data into separate .Rdata files so testing data is only brought into memory after model has been built.
+
+Save some memory to process testing set now
+```{r}
+rm(train.features, train.class)
+```
+
+# Testing set
+
+## Load Testing Set files
+
+### Load wndchrm features 
+
+```{r, comment=NA}
+load(file="../Wnd-Charm/plankton-test-wndchrm-features.Rdata", verbose=TRUE)   
+str(feature.matrix)
+testFeatures <- colnames(feature.matrix)
+```
+
+
 
 *****
 
