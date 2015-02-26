@@ -148,6 +148,7 @@ table(train.class)
 
 ## Save train data to .Rdata file for fast loads
 ```{r, comment=NA}
+dim(train.features)
 object.size(train.features)
 object.size(train.class)
 save(train.features, train.class, file="plankton-train-wndchrm-skimage-features.Rdata")
@@ -172,7 +173,97 @@ str(feature.matrix)
 testFeatures <- colnames(feature.matrix)
 ```
 
+### Load skimage features
 
+```{r, comment=NA}
+skimage <- read.csv("../skimage/test-properties-MASTER.csv", as.is=TRUE)
+str(skimage)
+head(skimage,2)
+```
+
+## Make sure train and test features match.
+```{r, comment=NA}
+trainFeatures <- trainFeatures[-1]  # drop class from train; not in test
+
+length(trainFeatures)
+length(testFeatures)
+
+length(intersect(testFeatures, trainFeatures))  # count of features in common
+setdiff(testFeatures, trainFeatures)
+setdiff(trainFeatures, testFeatures)
+```
+
+### Remove features in test set not in train set
+
+Four features must be removed from the test set.  These features were constant in the training set and were removed, but they were not constant in the test set.
+
+```{r, comment=NA}
+featuresToRemove <- setdiff(testFeatures, trainFeatures)
+featuresToRemoveIndices <- which(colnames(feature.matrix) %in% featuresToRemove)
+
+colnames(feature.matrix)[featuresToRemoveIndices]
+
+dim(feature.matrix)
+feature.matrix <- feature.matrix[,-featuresToRemoveIndices]
+dim(feature.matrix)
+```
+
+### Final check that wndchrm features in train and test match exactly
+```{r, comment=NA}
+testFeatures <- colnames(feature.matrix)
+length(trainFeatures)
+length(testFeatures)
+all(testFeatures == trainFeatures)
+```
+
+## Make sure wndchrm and skimage files processed in the same order.
+
+### Verify match by filename
+
+wndchrm
+```{r}
+splits <- strsplit(row.names(feature.matrix), "-")
+wndchrmFileIndex <- unlist(lapply(splits, "[", 1))
+head(wndchrmFileIndex)
+```
+
+skimage
+```{r}
+splits <- strsplit(skimage$filename, "\\.")
+skimageFileIndex <- unlist(lapply(splits, "[", 1))
+
+all(wndchrmFileIndex == skimageFileIndex)
+sum(wndchrmFileIndex == skimageFileIndex)
+```
+
+## Cleanup on skimage before combining with windchrm features
+
+Drop columns skimage$train and skimage$filename since they align with corresponding info in the feature.matrix.
+
+```{r, comment=NA}
+str(skimage)
+skimage$filename <- NULL  # no longer needed since aligned
+str(skimage)
+
+skimage <- as.matrix(skimage)
+```
+
+## cbind feature.matrix (wndchrm) and skimage features
+
+```{r, comment=NA}
+dim(feature.matrix)
+dim(skimage)
+
+test.features <- cbind(feature.matrix, skimage)
+rm(feature.matrix)
+```
+
+## Save test data to .Rdata file for fast loads
+```{r, comment=NA}
+dim(test.features)
+object.size(test.features)
+save(test.features, file="plankton-test-wndchrm-skimage-features.Rdata")
+```
 
 *****
 
