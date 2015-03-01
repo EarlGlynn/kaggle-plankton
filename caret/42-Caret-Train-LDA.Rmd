@@ -1,0 +1,97 @@
+---
+title: "Caret Plankton Model:  Linear Discriminant Analsyis (LDA)"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+```{r, cache=TRUE, comment=NA}
+library(caret)
+set.seed(37)
+options(width=150)
+```
+
+```{r, cache=TRUE, comment=NA}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```
+
+## Load preprocessed TRAINING file
+
+```{r, comment=NA}
+load("32-TRAIN-SETUP-Center-Scale.RData", verbose=TRUE)
+PREPROC.METHOD
+dim(trainTransformed)
+```
+
+## Setup parallel processing
+
+```{r parallel, comment=NA}
+library(doParallel)
+rCluster <- makePSOCKcluster(6)  # Use 6 cores
+registerDoParallel(rCluster)
+```
+
+### Partition preprocessed training data into a training and validation set.
+
+```{r subset, cache=TRUE, comment=NA}
+TRAIN.PERCENT <- 2/3
+inTrainSetIndex <- createDataPartition(y=train.class, p=TRAIN.PERCENT, list=FALSE)
+
+training        <- trainTransformed[ inTrainSetIndex,]
+trainPlankton   <- as.factor(train.class)[inTrainSetIndex]
+
+dim(training)
+length(trainPlankton)
+
+validation    <- trainTransformed[-inTrainSetIndex,]
+validPlankton <- as.factor(train.class)[-inTrainSetIndex]
+
+dim(validation)
+length(validPlankton)
+```
+
+### Apply specified caret training method
+
+See 
+
+* Caret [Model Training and Tuning](http://topepo.github.io/caret/training.html)
+
+* [Relationship between data splitting and trainControl](http://stackoverflow.com/questions/14968874/caret-relationship-between-data-splitting-and-traincontrol)
+
+```{r caret, cache=TRUE, comment=NA}
+bootControl <- trainControl(method="boot", number=3, verboseIter=TRUE)
+
+fit <- train(training, trainPlankton, 
+             method="lda",  
+             trControl=bootControl,
+             scaled=FALSE,   # no need to repeat
+             verbose=TRUE)
+summary(fit)
+# varImp(fit)
+
+OutOfSample  <- predict(fit, newdata=validation)
+confusion <- confusionMatrix(validPlankton, OutOfSample)
+
+options(width=120)
+confusion
+```
+
+
+```{r, comment=NA}
+stopCluster(rCluster)
+```
+
+*****
+
+```{r, cache=TRUE, comment=NA}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
