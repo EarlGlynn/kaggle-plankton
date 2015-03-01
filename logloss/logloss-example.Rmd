@@ -1,0 +1,110 @@
+---
+title: "logloss example"
+output: html_document
+---
+
+Replicate logloss function in R from one given in [Kaggle Plankton tutorial](https://www.kaggle.com/c/datasciencebowl/details/tutorial) by Aaron Sander.
+
+```{r, message=NA}
+y_true <- read.csv("y_true.csv")[,1]
+y_true <- y_true + 1  # make 1 origin
+length(y_true)
+y_true[1]
+
+y_pred <- as.matrix(read.csv("y_pred.csv"))
+dim(y_pred)
+colnames(y_pred) <-NULL 
+y_pred[1,]
+```
+
+No clip function (that I know of) in R, so brute force:
+
+```{r, message=NA}
+epsilon <- 1E-15
+
+predictions <- y_pred
+predictions[y_pred <   epsilon] <-   epsilon
+predictions[y_pred > 1-epsilon] <- 1-epsilon
+predictions[1,]
+
+actual <- matrix(0, nrow(y_pred), ncol(y_pred))
+
+n_samples <- nrow(actual)
+```
+
+"easy" python-like way does not work in R
+```
+actual[1:121, y_true] <- 1
+```
+# Brute force instead
+
+```{r, message=NA}
+for (i in 1:n_samples)
+{
+  actual[i, y_true[i]] <- 1
+}
+
+actual[1,]
+```
+
+Element-wise product
+
+```{r, message=NA}
+prod <- actual * log(predictions)
+prod[1,]
+```
+
+logloss by image
+```{r, message=NA}
+byImage <- apply(prod,1, sum)
+hist(byImage, main="Image logloss distribution")
+```
+
+```{r, message=NA}
+loss <- -1.0 * sum(byImage) / n_samples
+loss
+```
+
+## Counts by class of problem images
+
+```{r, message=NA}
+table(y_true[byImage < 5*median(byImage)])
+```
+
+## R Function
+
+```{r}
+multiclassLogLoss <- function(y_true, y_pred, epsion=1E-15)
+{
+  predictions <- y_pred
+  predictions[y_pred <   epsilon] <-   epsilon
+  predictions[y_pred > 1-epsilon] <- 1-epsilon
+  
+  actual <- matrix(0, nrow(y_pred), ncol(y_pred))
+  n_samples <- nrow(actual)
+  for (i in 1:n_samples)
+  {
+    actual[i, y_true[i]] <- 1
+  }
+  prod <- actual * log(predictions)  # element-wise matrix multiplication
+  byImage <- apply(prod,1, sum)
+  loss <- -1.0 * sum(byImage) / n_samples
+  
+  invisible(list(loss=loss, byImage=byImage))
+}
+```
+
+Example use of R function
+```{r, comment=NA}
+  result <- multiclassLogLoss(y_true, y_pred)
+  result$loss
+
+  heuristicCut <- 5*median(result$byImage) 
+  hist(result$byImage, main="Image logloss distribution")
+  abline(v=heuristicCut, col="skyblue", lwd=3)
+```
+
+Problem counts by class
+```{r, comment=NA}
+  table(y_true[result$byImage < heuristicCut])
+```
