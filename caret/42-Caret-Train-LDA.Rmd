@@ -6,6 +6,8 @@ output: html_document
 
 *****
 
+LDA is planned baseline method.
+
 ```{r, cache=TRUE, comment=NA}
 library(caret)
 set.seed(37)
@@ -24,6 +26,21 @@ load("32-TRAIN-SETUP-Center-Scale.RData", verbose=TRUE)
 PREPROC.METHOD
 dim(trainTransformed)
 ```
+## Avoid error
+
+```
+1: In train.default(training, trainPlankton, method = "lda", trControl = bootControl,  :
+  At least one of the class levels are not valid R variables names; This may cause errors 
+  if class probabilities are generated because the variables names will be converted to: 
+  X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13, X14, X15, X16, X17, X18, X19, X20, 
+  ...
+  X38, X39, X40, X41, X42, X43, X44, X X115, X116, X117, X118, X119, X120, X121
+```
+
+Try this fix:
+```{r, comment=NA}
+train.class <- as.factor(paste0("Plankton", sprintf("%03d", train.class)))
+```
 
 ## Setup parallel processing
 
@@ -40,13 +57,13 @@ TRAIN.PERCENT <- 2/3
 inTrainSetIndex <- createDataPartition(y=train.class, p=TRAIN.PERCENT, list=FALSE)
 
 training        <- trainTransformed[ inTrainSetIndex,]
-trainPlankton   <- as.factor(train.class)[inTrainSetIndex]
+trainPlankton   <- train.class[inTrainSetIndex]
 
 dim(training)
 length(trainPlankton)
 
 validation    <- trainTransformed[-inTrainSetIndex,]
-validPlankton <- as.factor(train.class)[-inTrainSetIndex]
+validPlankton <- train.class[-inTrainSetIndex]
 
 dim(validation)
 length(validPlankton)
@@ -61,13 +78,15 @@ See
 * [Relationship between data splitting and trainControl](http://stackoverflow.com/questions/14968874/caret-relationship-between-data-splitting-and-traincontrol)
 
 ```{r caret, cache=TRUE, comment=NA}
-bootControl <- trainControl(method="boot", number=3, verboseIter=TRUE)
+bootControl <- trainControl(method="boot", number=3, classProbs=TRUE, verboseIter=TRUE)
 
 fit <- train(training, trainPlankton, 
              method="lda",  
              trControl=bootControl,
              scaled=FALSE,   # no need to repeat
              verbose=TRUE)
+
+save(fit, file="042-LDA-FIT.Rdata")
 summary(fit)
 # varImp(fit)
 
@@ -78,6 +97,79 @@ options(width=120)
 confusion
 ```
 
+## Apply model to full training set
+
+```{r trainpredict, comment=NA}
+PredictTraining <- predict(fit, newdata=trainTransformed, type="prob", verbose=TRUE)
+dim(PredictTraining)
+```
+
+### Estimate Kaggle score:  multiclass log loss
+```{r multiclassLogLoss}
+multiclassLogLoss <- function(y_true, y_pred, epsilon=1E-15)
+{
+  predictions <- y_pred
+  predictions[y_pred <   epsilon] <-   epsilon
+  predictions[y_pred > 1-epsilon] <- 1-epsilon
+  
+  actual <- matrix(0, nrow(y_pred), ncol(y_pred))
+  n_samples <- nrow(actual)
+  for (i in 1:n_samples)
+  {
+    actual[i, y_true[i]] <- 1
+  }
+  prod <- actual * log(predictions)  # element-wise matrix multiplication
+  byImage <- apply(prod,1, sum)
+  loss <- -1.0 * sum(byImage) / n_samples
+  
+  invisible(list(loss=loss, byImage=byImage))
+}
+```
+
+```{r logloss, comment=NA}
+y_true <- as.integer(train.class) 
+logLoss <- multiclassLogLoss(y_true, PredictTraining)
+logLoss$loss
+
+heuristicCut <- -5
+hist(logLoss$byImage, main="Image logloss distribution")
+abline(v=heuristicCut, col="skyblue", lwd=3)
+```
+
+Image counts by problem classes
+```{r}
+counts <- table(y_true[logLoss$byImage < heuristicCut])
+counts
+sum(counts)
+```
+
+Free up some memory
+```{r}
+rm(logLoss, PredictTraining, training, validation)
+```
+
+## Apply training model to full test set
+
+```{r testset, comment=NA, warning=FALSE}
+load("../Features/plankton-test-wndchrm-skimage-features.Rdata", verbose=TRUE)
+dim(test.features)
+
+# Apply same changes to test data as applied to training data in same order
+test.features <- test.features[,!NZ]
+test.features <- test.features[,-cor.high]
+test.features <- test.features[,-LINEAR]
+dim(test.features)
+stopifnot(ncol(test.features) == 1357)
+
+testTransformed <- predict(trainPreProcessed, test.features)
+dim(testTransformed)
+
+PredictTest <- predict(fit, newdata=testTransformed, type="prob", verbose=TRUE)
+dim(PredictTest)
+save(PredictTest, file="042-LDA-Submission-RawData.Rdata")
+```
+
+## Stop cluster, quit
 
 ```{r, comment=NA}
 stopCluster(rCluster)
