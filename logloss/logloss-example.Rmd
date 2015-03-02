@@ -74,7 +74,7 @@ table(y_true[byImage < 5*median(byImage)])
 ## R Function
 
 ```{r}
-multiclassLogLoss <- function(y_true, y_pred, epsion=1E-15)
+multiclassLogLoss <- function(y_true, y_pred, epsilon=1E-15)
 {
   predictions <- y_pred
   predictions[y_pred <   epsilon] <-   epsilon
@@ -99,12 +99,14 @@ Example use of R function
   result <- multiclassLogLoss(y_true, y_pred)
   result$loss
 
-  heuristicCut <- 5*median(result$byImage) 
+  heuristicCut <- -5
   hist(result$byImage, main="Image logloss distribution")
   abline(v=heuristicCut, col="skyblue", lwd=3)
 ```
 
 Problem counts by class
 ```{r, comment=NA}
-  table(y_true[result$byImage < heuristicCut])
+counts <- table(y_true[result$byImage < heuristicCut])
+counts
+sum(counts)
 ```
