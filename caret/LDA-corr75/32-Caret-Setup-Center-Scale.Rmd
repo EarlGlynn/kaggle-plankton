@@ -12,7 +12,7 @@ SETUP <- "Center-Scale"
 
 ```{r, cache=TRUE, comment=NA}
 library(caret)
-set.seed(37)
+set.seed(19937)
 options(width=150)
 ```
 
@@ -24,9 +24,24 @@ format(time.1, "%Y-%m-%d-%H%M%S")
 ## Load raw TRAINING file
 
 ```{r, comment=NA}
-load("../Features/plankton-train-wndchrm-skimage-features.Rdata", verbose=TRUE)
-dim(train.features)
+load("../../Features/plankton-train-wndchrm-skimage-features.Rdata", verbose=TRUE)
 length(train.class)
+dim(train.features)
+```
+
+skimage features have many missing values, especially for a number of smaller images.  Until this gets resolved, let's remove the skimage features.
+```
+
+```{r, comment=NA}
+colnames(train.features)[2894]       # last wndchrm feature
+colnames(train.features)[2895:2923]  # skimage features
+train.features <- train.features[,-2895:-2923]
+dim(train.features)
+```
+
+Verify there are no NAs
+```{r, comment=NA}
+sum(is.na(train.features))
 ```
 
 ## Setup parallel processing
@@ -35,32 +50,6 @@ length(train.class)
 library(doParallel)
 rCluster <- makePSOCKcluster(6)  # Use 6 cores
 registerDoParallel(rCluster)
-```
-
-## Remove Rows with NAs
-
-For now kick out rows that have NAs. All of the NAs are from the skimage features and for some reason only affect class=1 with plenty of left-over rows for analysis.
-
-```{r NAs, cache=TRUE, comment=NA}
-sum(is.na(train.features))
-
-countsColumnNA <- apply(train.features, 2, function(x) {sum(is.na(x))}) 
-countsColumnNA[countsColumnNA > 0]
-
-countsRowNA <- apply(train.features, 1, function(x) {sum(is.na(x))}) 
-NArows <- countsRowNA > 0
-countNArows <- sum(NArows)
-countNArows
-table(train.class[countsRowNA[NArows]])  # Why is only class 1 affected?
-
-train.class    <- train.class[!NArows]
-train.features <- train.features[!NArows,]
-originalDim <- dim(train.features)
-originalDim
-
-table(train.class)
-
-sum(is.na(train.features))
 ```
 
 ## Caret preprocessing
@@ -75,10 +64,11 @@ See
 
 ```{r nearzero, cache=TRUE, comment=NA}
 nzv <- nearZeroVar(train.features, saveMetrics=TRUE)
-countNzv <- sum(nzv$nzv)
+NZ <- nzv$nzv
+countNzv <- sum(NZ)
 countNzv
-nzv[nzv$nzv,]
-train.features <- train.features[,!nzv$nzv]
+nzv[NZ,]
+train.features <- train.features[,!NZ]
 dim(train.features)
 ```
 
@@ -87,13 +77,14 @@ dim(train.features)
 ```{r highcor, cache=TRUE, comment=NA}
 cor.matrix <- cor(train.features)
 
+# Note very high correlations
 cor.high.count <- sum(abs(cor.matrix[upper.tri(cor.matrix)]) > 0.99)
 cor.high.count
 
 # Range check
 summary(cor.matrix[upper.tri(cor.matrix)])
 
-COR.HIGH.CUTOFF <- 0.80
+COR.HIGH.CUTOFF <- 0.75   # try higher values later
 cor.high   <- findCorrelation(cor.matrix, cutoff=COR.HIGH.CUTOFF)
 length(cor.high)
 
@@ -103,15 +94,14 @@ dim(train.features)
 # Repeat range check
 cor.matrix <- cor(train.features)
 summary(cor.matrix[upper.tri(cor.matrix)])
-#boxplot(cor.matrix[upper.tri(cor.matrix)])
 ```
 
 ### Linear Dependencies
 ```{r lineardepend, cache=TRUE, comment=NA}
 linearCombos <- findLinearCombos(train.features)
-countLinearCombos <- length(linearCombos$remove)
-countLinearCombos
-train.features <- train.features[, -linearCombos$remove]
+LINEAR <- linearCombos$remove
+length(LINEAR)
+train.features <- train.features[, -LINEAR]
 dim(train.features)
 ```
 
@@ -144,9 +134,6 @@ or
 ```{r carettrain,cache=TRUE, comment=NA}
 PREPROC.METHOD <- c("center", "scale")
 
-finalPreprocessDim <- dim(train.features)
-finalPreprocessDim
-
 trainPreProcessed <- preProcess(train.features, 
                                 method=PREPROC.METHOD,
                                 #thresh=0.75,
@@ -159,16 +146,14 @@ dim(trainTransformed)
 ## Save for separate Caret training with more memory
 
 ```{r}
-NZ <- nzv$nzv
-LINEAR <- linearCombos$remove
-
 save(trainPreProcessed, 
-     trainTransformed, train.class, 
+     trainTransformed, 
+     train.class, 
      NZ,
      cor.high,
      LINEAR,
      PREPROC.METHOD,
-     file=paste0("32-TRAIN-SETUP-", SETUP, ".RData"))
+     file=paste0("TRAIN-SETUP-", SETUP, ".RData"))
 ```
 
 

@@ -22,7 +22,7 @@ format(time.1, "%Y-%m-%d-%H%M%S")
 ## Load preprocessed TRAINING file
 
 ```{r, comment=NA}
-load("32-TRAIN-SETUP-Center-Scale.RData", verbose=TRUE)
+load("TRAIN-SETUP-Center-Scale.RData", verbose=TRUE)
 PREPROC.METHOD
 dim(trainTransformed)
 ```
@@ -86,14 +86,16 @@ fit <- train(training, trainPlankton,
              scaled=FALSE,   # no need to repeat
              verbose=TRUE)
 
-save(fit, file="042-LDA-FIT.Rdata")
+warnings()
+
+save(fit, file="LDA-FIT.Rdata")
 summary(fit)
 # varImp(fit)
 
 OutOfSample  <- predict(fit, newdata=validation)
 confusion <- confusionMatrix(validPlankton, OutOfSample)
 
-options(width=120)
+options(width=150)
 confusion
 ```
 
@@ -145,28 +147,45 @@ sum(counts)
 
 Free up some memory
 ```{r}
-rm(logLoss, PredictTraining, training, validation)
+rm(trainTransformed, logLoss, PredictTraining, training, validation)
 ```
 
 ## Apply training model to full test set
 
 ```{r testset, comment=NA, warning=FALSE}
-load("../Features/plankton-test-wndchrm-skimage-features.Rdata", verbose=TRUE)
+load("../../Features/plankton-test-wndchrm-skimage-features.Rdata", verbose=TRUE)
 dim(test.features)
+```
 
-# Apply same changes to test data as applied to training data in same order
+Remove skimage features that have NAs.
+```{r, comment=NA}
+test.features <- test.features[,-2895:-2923]
+dim(test.features)
+```
+
+Apply same changes to test data as applied to training data in same order
+```{r fulltest, comment=NA, warning=FALSE}
 test.features <- test.features[,!NZ]
 test.features <- test.features[,-cor.high]
 test.features <- test.features[,-LINEAR]
 dim(test.features)
-stopifnot(ncol(test.features) == 1357)
 
 testTransformed <- predict(trainPreProcessed, test.features)
 dim(testTransformed)
 
 PredictTest <- predict(fit, newdata=testTransformed, type="prob", verbose=TRUE)
 dim(PredictTest)
-save(PredictTest, file="042-LDA-Submission-RawData.Rdata")
+save(PredictTest, file="LDA-Submission-RawData.Rdata")
+```
+
+### Check for failed predictions
+```{r}
+sum(is.na(PredictTest))
+NA.row <- which(is.na(PredictTest[,1]))
+length(NA.row)
+
+head(PredictTest[NA.row,])
+
 ```
 
 ## Stop cluster, quit
