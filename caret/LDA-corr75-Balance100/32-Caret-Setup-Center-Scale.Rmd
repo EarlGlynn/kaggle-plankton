@@ -1,0 +1,201 @@
+---
+title: "Caret Plankton Model Setup: Center-Scale"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+```{r}
+SETUP <- "Center-Scale"
+```
+
+```{r, cache=TRUE, comment=NA}
+library(caret)
+set.seed(19937)
+options(width=100)
+```
+
+```{r, cache=TRUE, comment=NA}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```
+
+## Load raw TRAINING file
+
+```{r, comment=NA}
+load("../../Features/plankton-train-wndchrm-skimage-features.Rdata", verbose=TRUE)
+length(train.class)
+dim(train.features)
+```
+
+skimage features have many missing values, especially for a number of smaller images.  Until this gets resolved, let's remove the skimage features.
+```
+
+```{r, comment=NA}
+colnames(train.features)[2894]       # last wndchrm feature
+colnames(train.features)[2895:2923]  # skimage features
+train.features <- train.features[,-2895:-2923]
+dim(train.features)
+```
+
+Verify there are no NAs
+```{r, comment=NA}
+sum(is.na(train.features))
+```
+
+## Experiment:  Balance TRAIN set by class
+
+Under/over sample to get exactly 100 rows per class
+
+```{r, comment=NA}
+TRAIN <- cbind(train.features, class=train.class)
+
+N <- 100
+trainList <- list()
+for (i in 1:121)
+{
+  trainSubset    <- TRAIN[(train.class == i),]  
+  SampleRows <- sample(1:nrow(trainSubset), N, replace=TRUE)
+  # Make row names unique to avoid later warnings
+  SampleSubset <- trainSubset[SampleRows,]
+  rownames(SampleSubset) <- paste0(rownames(SampleSubset), "-", 1:nrow(SampleSubset))
+  trainList[[i]] <- SampleSubset
+}
+
+BALANCED <- do.call(rbind, lapply(trainList, function(x) {x}))
+rm(TRAIN, trainList)
+
+train.class    <- BALANCED[, ncol(BALANCED)]
+train.features <- BALANCED[,-ncol(BALANCED)]
+```
+
+## Setup parallel processing
+
+```{r parallel, comment=NA}
+library(doParallel)
+rCluster <- makePSOCKcluster(6)  # Use 6 cores
+registerDoParallel(rCluster)
+```
+
+## Caret preprocessing
+
+See 
+
+* [Caret Pre-Processing](http://caret.r-forge.r-project.org/preprocess.html)
+* [Pre-Processing of Predictors](http://www.inside-r.org/node/86978)
+* [Building Predictive Models in R Using the caret Package](http://www.jstatsoft.org/v28/i05/paper)
+
+### Remove near-zero variance predictors
+
+```{r nearzero, cache=TRUE, comment=NA}
+nzv <- nearZeroVar(train.features, saveMetrics=TRUE)
+NZ <- nzv$nzv
+countNzv <- sum(NZ)
+countNzv
+nzv[NZ,]
+train.features <- train.features[,!NZ]
+dim(train.features)
+```
+
+### Remove variables with high correlation to others
+
+```{r highcor, cache=TRUE, comment=NA}
+cor.matrix <- cor(train.features)
+
+# Note very high correlations
+cor.high.count <- sum(abs(cor.matrix[upper.tri(cor.matrix)]) > 0.99)
+cor.high.count
+
+# Range check
+summary(cor.matrix[upper.tri(cor.matrix)])
+
+COR.HIGH.CUTOFF <- 0.75   # try higher values later
+cor.high   <- findCorrelation(cor.matrix, cutoff=COR.HIGH.CUTOFF)
+length(cor.high)
+
+train.features <- train.features[, -cor.high]
+dim(train.features)
+
+# Repeat range check
+cor.matrix <- cor(train.features)
+summary(cor.matrix[upper.tri(cor.matrix)])
+```
+
+### Linear Dependencies
+```{r lineardepend, cache=TRUE, comment=NA}
+linearCombos <- findLinearCombos(train.features)
+LINEAR <- linearCombos$remove
+length(LINEAR)
+train.features <- train.features[, -LINEAR]
+dim(train.features)
+```
+
+### Class Distance Calculations
+
+Because of some of the small Plankton classes, this technique **cannot** be used without receiving this error:  
+
+```
+centroids <- classDist(as.factor(train.class), train.features)
+"there must be more rows than columns for this class"
+```
+
+### Other Preprocessing
+
+YeoJohnson is like BoxCox but can be used with zero and negative values.
+
+Caret execution order:  Box-Cox/Yeo-Johnson/expoTrans, center, scale, range, imputation,
+                        PCA/ICA, spatial sign
+                        
+Variations to try:  
+
+1a. pca, thresh=0.95 or pcaComp=75
+
+or
+
+1b. ica, n.comp=3
+
+2. spatial sign  (may help when there are outliers)                      
+
+```{r carettrain,cache=TRUE, comment=NA}
+PREPROC.METHOD <- c("center", "scale")
+
+trainPreProcessed <- preProcess(train.features, 
+                                method=PREPROC.METHOD,
+                                #thresh=0.75,
+                                na.remove=FALSE,  # already removed
+                                verbose=TRUE)
+trainTransformed <- predict(trainPreProcessed, train.features)
+dim(trainTransformed)
+```
+
+## Save for separate Caret training with more memory
+
+```{r}
+save(trainPreProcessed, 
+     trainTransformed, 
+     train.class, 
+     NZ,
+     cor.high,
+     LINEAR,
+     PREPROC.METHOD,
+     file=paste0("TRAIN-SETUP-", SETUP, ".RData"))
+```
+
+
+```{r, comment=NA}
+stopCluster(rCluster)
+```
+
+*****
+
+```{r, cache=TRUE, comment=NA}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`

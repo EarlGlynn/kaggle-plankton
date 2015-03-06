@@ -1,0 +1,281 @@
+---
+title: "Caret Plankton Model:  Linear Discriminant Analsyis (LDA)"
+author: "Earl F Glynn"
+output: html_document
+---
+
+*****
+
+LDA is planned baseline method.
+
+```{r, cache=TRUE, comment=NA}
+library(caret)
+set.seed(37)
+options(width=100)
+```
+
+```{r, cache=TRUE, comment=NA}
+time.1 <- Sys.time()
+format(time.1, "%Y-%m-%d-%H%M%S")
+```
+
+## Load preprocessed TRAINING file
+
+```{r, comment=NA}
+load("TRAIN-SETUP-Center-Scale.RData", verbose=TRUE)
+PREPROC.METHOD
+dim(trainTransformed)
+```
+## Avoid error
+
+```
+1: In train.default(training, trainPlankton, method = "lda", trControl = bootControl,  :
+  At least one of the class levels are not valid R variables names; This may cause errors 
+  if class probabilities are generated because the variables names will be converted to: 
+  X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13, X14, X15, X16, X17, X18, X19, X20, 
+  ...
+  X38, X39, X40, X41, X42, X43, X44, X X115, X116, X117, X118, X119, X120, X121
+```
+
+Try this fix:
+```{r, comment=NA}
+train.class <- as.factor(paste0("Plankton", sprintf("%03d", train.class)))
+```
+
+## Setup parallel processing
+
+```{r parallel, comment=NA}
+library(doParallel)
+rCluster <- makePSOCKcluster(6)  # Use 6 cores
+registerDoParallel(rCluster)
+```
+
+### Partition preprocessed training data into a training and validation set.
+
+```{r subset, cache=TRUE, comment=NA}
+TRAIN.PERCENT <- 2/3
+inTrainSetIndex <- createDataPartition(y=train.class, p=TRAIN.PERCENT, list=FALSE)
+
+training        <- trainTransformed[ inTrainSetIndex,]
+trainPlankton   <- train.class[inTrainSetIndex]
+
+dim(training)
+length(trainPlankton)
+
+validation    <- trainTransformed[-inTrainSetIndex,]
+validPlankton <- train.class[-inTrainSetIndex]
+
+dim(validation)
+length(validPlankton)
+```
+
+### Apply specified caret training method
+
+See 
+
+* Caret [Model Training and Tuning](http://topepo.github.io/caret/training.html)
+
+* [Relationship between data splitting and trainControl](http://stackoverflow.com/questions/14968874/caret-relationship-between-data-splitting-and-traincontrol)
+
+```{r caret, cache=TRUE, comment=NA}
+bootControl <- trainControl(method="boot", number=3, classProbs=TRUE, verboseIter=TRUE)
+
+fit <- train(training, trainPlankton, 
+             method="lda",  
+             trControl=bootControl,
+             scaled=FALSE,   # no need to repeat
+             verbose=TRUE)
+
+save(fit, file="LDA-FIT.Rdata")
+summary(fit)
+# varImp(fit)
+
+OutOfSample  <- predict(fit, newdata=validation)
+confusion <- confusionMatrix(OutOfSample, validPlankton)
+str(confusion)
+
+confusion
+```
+
+```{r ClassConfusion1, cache=TRUE, comment=NA, fig.width=6, fig.height=6}
+dim(confusion$byClass)
+dimnames(confusion$byClass)[[2]][1:2]
+plot(confusion$byClass[,1], confusion$byClass[,2],
+    main="Balanced Experiment (100)", pch=20, col="skyblue",
+    xlab=dimnames(confusion$byClass)[[2]][1],
+    ylab=dimnames(confusion$byClass)[[2]][2])
+grid()
+text(confusion$byClass[,1], confusion$byClass[,2],
+     as.numeric(substr(dimnames(confusion$byClass)[[1]], 16, 18)), cex=0.75)
+mtext(paste0("By Plankton Class for Balanced Training Set (", length(validPlankton), ")"))
+```
+
+## Apply model to full training set
+
+```{r trainpredict, comment=NA}
+PredictTraining <- predict(fit, newdata=trainTransformed, type="prob", verbose=TRUE)
+dim(PredictTraining)
+```
+
+### Estimate Kaggle score:  multiclass log loss
+```{r multiclassLogLoss}
+multiclassLogLoss <- function(y_true, y_pred, epsilon=1E-15)
+{
+  predictions <- y_pred
+  predictions[y_pred <   epsilon] <-   epsilon
+  predictions[y_pred > 1-epsilon] <- 1-epsilon
+  
+  actual <- matrix(0, nrow(y_pred), ncol(y_pred))
+  n_samples <- nrow(actual)
+  for (i in 1:n_samples)
+  {
+    actual[i, y_true[i]] <- 1
+  }
+  prod <- actual * log(predictions)  # element-wise matrix multiplication
+  byImage <- apply(prod,1, sum)
+  loss <- -1.0 * sum(byImage) / n_samples
+  
+  invisible(list(loss=loss, byImage=byImage))
+}
+```
+
+```{r logloss, comment=NA}
+y_true <- as.integer(train.class) 
+logLoss <- multiclassLogLoss(y_true, PredictTraining)
+logLoss$loss
+
+heuristicCut <- -5
+hist(logLoss$byImage, main="Image logloss distribution")
+abline(v=heuristicCut, col="skyblue", lwd=3)
+```
+
+Image counts by problem classes
+```{r}
+counts <- table(y_true[logLoss$byImage < heuristicCut])
+counts
+sum(counts)
+```
+
+## Apply training model to original full train set
+
+```{r originaltrain, comment=NA, warning=FALSE}
+load("../../Features/plankton-train-wndchrm-skimage-features.Rdata", verbose=TRUE)
+dim(train.features)
+length(train.class)
+```
+
+Remove skimage features that have NAs.
+```{r, comment=NA}
+train.features <- train.features[,-2895:-2923]
+dim(train.features)
+```
+
+Apply same changes to original training data as applied to balanced training data in same order
+```{r orgtrainclean1, comment=NA, warning=FALSE}
+train.features <- train.features[,!NZ]
+train.features <- train.features[,-cor.high]
+train.features <- train.features[,-LINEAR]
+dim(train.features)
+
+orgTrainTransformed <- predict(trainPreProcessed, train.features)
+dim(orgTrainTransformed)
+```
+
+```{r PredictOriginalTraining1, comment=NA}
+orgPredictTrain <- predict(fit, newdata=orgTrainTransformed)
+dim(orgPredictTrain)
+
+train.class <- as.factor(paste0("Plankton", sprintf("%03d", train.class)))
+confusion <- confusionMatrix(orgPredictTrain, train.class)
+confusion
+```
+
+```{r ClassConfusion2, cache=TRUE, comment=NA, fig.width=6, fig.height=6}
+dim(confusion$byClass)
+dimnames(confusion$byClass)[[2]][1:2]
+plot(confusion$byClass[,1], confusion$byClass[,2],
+    main="Balanced Experiment (100)", pch=20, col="skyblue",
+    xlab=dimnames(confusion$byClass)[[2]][1],
+    ylab=dimnames(confusion$byClass)[[2]][2])
+grid()
+text(confusion$byClass[,1], confusion$byClass[,2],
+     as.numeric(substr(dimnames(confusion$byClass)[[1]], 16, 18)), cex=0.75)
+mtext(paste0("By Plankton Class for Original Training Set (", length(train.class), ")"))
+```
+
+Re-do prediction to compute Kaggle logloss metric
+
+```{r, PredictOriginalTraining2, comment=NA, warning=FALSE}
+orgPredictTrain <- predict(fit, newdata=orgTrainTransformed, type="prob", verbose=TRUE)
+dim(orgPredictTrain)
+
+y_true <- as.integer(train.class) 
+logLoss2 <- multiclassLogLoss(y_true, orgPredictTrain)
+logLoss2$loss
+
+heuristicCut <- -5
+hist(logLoss2$byImage, main="Image logloss distribution")
+abline(v=heuristicCut, col="skyblue", lwd=3)
+```
+
+Free up some memory
+```{r}
+rm(trainTransformed, logLoss, PredictTraining, training, validation)
+```
+
+## Apply training model to full test set
+
+```{r testset, comment=NA, warning=FALSE}
+load("../../Features/plankton-test-wndchrm-skimage-features.Rdata", verbose=TRUE)
+dim(test.features)
+```
+
+Remove skimage features that have NAs.
+```{r, comment=NA}
+test.features <- test.features[,-2895:-2923]
+dim(test.features)
+```
+
+Apply same changes to test data as applied to training data in same order
+```{r fulltest, comment=NA, warning=FALSE}
+test.features <- test.features[,!NZ]
+test.features <- test.features[,-cor.high]
+test.features <- test.features[,-LINEAR]
+dim(test.features)
+
+testTransformed <- predict(trainPreProcessed, test.features)
+dim(testTransformed)
+
+PredictTest <- predict(fit, newdata=testTransformed, type="prob", verbose=TRUE)
+dim(PredictTest)
+save(PredictTest, file="LDA-Submission-RawData.Rdata")
+```
+
+### Check for failed predictions
+```{r}
+sum(is.na(PredictTest))
+NA.row <- which(is.na(PredictTest[,1]))
+length(NA.row)
+
+head(PredictTest[NA.row,])
+
+```
+
+## Stop cluster, quit
+
+```{r, comment=NA}
+stopCluster(rCluster)
+```
+
+*****
+
+```{r, cache=TRUE, comment=NA}
+time.2 <- Sys.time()
+cat(sprintf("%.1f", as.numeric(difftime(time.2, time.1, units="secs"))), " secs\n")
+```
+
+*****
+
+*efg* @EarlGlynn
+
+`r format(Sys.time(), "%Y-%m-%d  %H%M")`
