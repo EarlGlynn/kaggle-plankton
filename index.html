@@ -32,9 +32,10 @@
       <div class="inner clearfix">
         <section id="main-content"> Earl F Glynn<br>
           <br>
-          Work in progress:&nbsp; updated 2015-02-26<br>
+          Work in progress:&nbsp; updated 2015-03-07<br>
           <h3> <a id="intro" class="anchor" href="#intro"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction
+
 
 
 
@@ -82,6 +83,7 @@
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Tutorials
 
 
+
             and Explorations [Windows]<br>
           </h3>
           <p>I went through two online tutorials to understand the data
@@ -109,11 +111,13 @@
 
 
 
+
               notebook <a
                 href="BenReuven-Kaggle-Plankton-tutorial-submission.html">BenReuven-Kaggle-Plankton-tutorial-submission.html</a></li>
             <li>Experiments showing more details than original tutorial:
               IPython notebook <a
                 href="file:///C:/GitHub/kaggle-plankton/Plankton%20Explorer.html">Plankton
+
 
 
 
@@ -151,10 +155,12 @@
 
 
 
+
             Images [Windows]</h3>
           <p>Many duplicates images, which were mostly in the test set,
             were found by computing and comparing <a
               href="http://en.wikipedia.org/wiki/Md5sum">md5sums</a>.&nbsp;
+
 
 
 
@@ -185,11 +191,13 @@
 
 
 
+
               Train images 14864.jpg and 271.jpg, oddly assigned to two
               different classes, were found to be duplicates using
               script <b>01-train-md5.R</b>.<br>
             </li>
             <li><b>Test</b>:&nbsp; <a href="04-test-duplicates.pdf">04-test-duplicates.pdf</a>.&nbsp;
+
 
 
 
@@ -265,6 +273,7 @@ counts
 
 
 
+
               skimage region properties.html</a>. <br>
           </p>
           <p>The feature sets were computed for both the training and
@@ -299,11 +308,13 @@ counts
 
 
 
+
             <i>A generalized pattern recognition system for images
               developed by the Goldberg group at the NIH/NIA. </i><br>
           </p>
           <p><a
               href="http://vfacstaff.ltu.edu/lshamir/downloads/ImageClassifier/">Last
+
 
 
 
@@ -339,12 +350,14 @@ counts
 
 
 
+
               [Train numbers for each of 121 directories – oops
               directory count was 122. Test total count is 130,400.]</li>
             <li>Fix problems with two directories by re-running
               conversion for those directories after manually cleaning
               some directory problems:&nbsp; <a
                 href="Convert%20two%20notebooks%20jpg%20to%20tif.html">Convert
+
 
 
 
@@ -366,6 +379,7 @@ counts
           </ul>
           <h3> <a id="wndchrm" class="anchor" href="#wndchrm"
               aria-hidden="true"><span class="octicon octicon-link"></span></a>Computation
+
 
 
 
@@ -420,6 +434,7 @@ counts
 
 
 
+
               The first three principal components of the training
               feature matrix can be viewed using the R pca3d package:<br>
             </li>
@@ -450,8 +465,10 @@ counts
 
 
 
+
               The file <b>plankton-test-wndchrm-features.Rdata</b> is
               1.1 GB in size. See <a href="wndchrm-test-data.html">wndchrm-test-data.htm</a>l.
+
               <br>
             </li>
           </ul>
@@ -460,7 +477,11 @@ counts
           <p>The <a href="combine-wndchrm-skimage-features.html">29
               skimage features were combined with 2894 wndchrm features</a>
             (there may be overlap) to create the final training and test
-            sets with 2923 features.<br>
+            sets with 2923 features.&nbsp; Update:&nbsp; This was a bad
+            idea.&nbsp; Many of the skimage features have missing values
+            for unknown reasons.&nbsp; Instead of resolving the missing
+            value problem, the skimage features for now are being
+            ignored in machine learning experiments.<br>
           </p>
           <ul>
           </ul>
@@ -472,7 +493,34 @@ counts
           <p>Machine learning experiments are being run with the <a
               href="http://topepo.github.io/caret/index.html">R caret
               package</a>.</p>
-          <p>under development&nbsp; ...<br>
+          <p><b>Baseline</b>.&nbsp; I like to start with linear
+            discriminant analysis as my baseline technique, since&nbsp;
+            other techniques sometimes only do slightly better than LDA.<br>
+          </p>
+          <p>Here's an <a href="caret/32-Caret-Setup-Center-Scale.html">example
+              setup of the training data for LDA</a>.&nbsp; Here are the
+            <a href="caret/42-Caret-Train-LDA.html">LDA results for one
+              experiment</a>.&nbsp; The overall accuracy of the model
+            was only 61% and there are large differences in the model's
+            sensitivity and specificity for the 121 plankton classes.<br>
+          </p>
+          <p><b>Differences in Sensitivity/Specificity by Plankton Class
+              for One LDA Model</b><br>
+          </p>
+          <img alt="Differences in Sensitivity/Specificity by Plankton
+            Class" title="Differences in Sensitivity/Specificity by
+            Plankton Class" src="caret/LDA-Corr75-ClassConfusion1-1.png"
+            height="500" width="500">
+          <p>The differences are thought to be explained by the inherent
+            difference in the plankton classes, as well as the large
+            imbalance in the number of training images by class.<br>
+          </p>
+          <p>The <a href="caret/logloss-example.html">logloss score
+              used by Kaggle</a> was better than the starting value
+            (4.796) in the competition, but not that great:&nbsp; 3.23.<br>
+          </p>
+          <p><b>Other numerical experiments are being conducted with
+              various caret machine learning methods ....</b><br>
           </p>
           <br>
         </section>
@@ -486,6 +534,7 @@ href="https://github.com/EarlGlynn/kaggle-plankton/tarball/master"
           <p>This page was generated by <a
               href="https://pages.github.com">GitHub Pages</a> using the
             Architect theme by <a href="https://twitter.com/jasonlong">Jason
+
 
 
 
