@@ -1,0 +1,30 @@
+[1] "2015-03-09-131331"
+Loading objects:
+  train.features
+  train.class
+[1] 30336
+[1] 30336  2923
+[1] "Gini Coefficient (Wavelet (Edge ())) [0]"
+ [1] "area"                       "area_convex"               
+ [3] "area_filled"                "box_max_col"               
+ [5] "box_max_row"                "box_min_col"               
+ [7] "box_min_row"                "centroid_col"              
+ [9] "centroid_row"               "countCoords"               
+[11] "diameter_equivalent"        "euler_number"              
+[13] "inertia_tensor_eigenvalue1" "inertia_tensor_eigenvalue2"
+[15] "label"                      "length_major_axis"         
+[17] "length_minor_axis"          "moments_hu1"               
+[19] "moments_hu2"                "moments_hu3"               
+[21] "moments_hu4"                "moments_hu5"               
+[23] "moments_hu6"                "moments_hu7"               
+[25] "orientation"                "perimeter"                 
+[27] "ratio_eccentricity"         "ratio_extent"              
+[29] "ratio_solidity"            
+[1] 30336  2894
+[1] 0
+[1] 879
+[1] 180
+
+Tentative Confirmed  Rejected 
+       46       180      2668 
+[1] "2015-03-09-220923"
